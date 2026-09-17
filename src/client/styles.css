@@ -1,0 +1,141 @@
+:root {
+	--bg: #101114;
+	--fg: #f4f1ea;
+	--muted: #b7b1a4;
+	--panel: #1b1d22;
+	--border: #3a3d46;
+	--primary: #e8c547;
+	--primary-fg: #1a1503;
+	--danger: #f07167;
+	--success: #8bd450;
+	--focus: #9ecbff;
+	--space: 1rem;
+	--touch: 2.75rem;
+}
+
+@media (prefers-color-scheme: light) {
+	:root {
+		--bg: #f7f4ee;
+		--fg: #16171b;
+		--muted: #5c584f;
+		--panel: #ffffff;
+		--border: #d8d2c6;
+		--primary: #8a6a00;
+		--primary-fg: #fff8e1;
+		--danger: #b42318;
+		--success: #246b2a;
+		--focus: #1254c7;
+	}
+}
+
+* {
+	box-sizing: border-box;
+}
+
+html,
+body {
+	margin: 0;
+	min-height: 100%;
+	background: var(--bg);
+	color: var(--fg);
+	font-family: "Segoe UI", system-ui, sans-serif;
+	line-height: 1.5;
+}
+
+.page {
+	max-width: 42rem;
+	margin: 0 auto;
+	padding: calc(var(--space) * 1.5);
+}
+
+.site-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: var(--space);
+	margin-bottom: var(--space);
+}
+
+.eyebrow {
+	letter-spacing: 0.08em;
+	text-transform: uppercase;
+	font-size: 0.8rem;
+	color: var(--muted);
+	margin: 0;
+}
+
+.panel {
+	background: var(--panel);
+	border: 1px solid var(--border);
+	border-radius: 0.75rem;
+	padding: calc(var(--space) * 1.25);
+	margin-bottom: var(--space);
+}
+
+.actions,
+.contact-form {
+	display: grid;
+	gap: 0.75rem;
+}
+
+.button,
+input,
+textarea {
+	min-height: var(--touch);
+	font: inherit;
+	color: inherit;
+}
+
+.button {
+	cursor: pointer;
+	border-radius: 0.5rem;
+	border: 1px solid var(--border);
+	background: var(--primary);
+	color: var(--primary-fg);
+	padding: 0.5rem 1rem;
+}
+
+a.button {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	text-decoration: none;
+}
+
+.button:disabled {
+	opacity: 0.6;
+	cursor: not-allowed;
+}
+
+.button:focus-visible,
+input:focus-visible,
+textarea:focus-visible {
+	outline: 3px solid var(--focus);
+	outline-offset: 2px;
+}
+
+input,
+textarea {
+	width: 100%;
+	background: var(--bg);
+	border: 1px solid var(--border);
+	border-radius: 0.5rem;
+	padding: 0.5rem 0.75rem;
+}
+
+.error {
+	color: var(--danger);
+	margin: 0.5rem 0 0;
+}
+
+.success,
+.status {
+	color: var(--success);
+}
+
+@media (prefers-reduced-motion: reduce) {
+	* {
+		transition: none !important;
+		animation: none !important;
+	}
+}
