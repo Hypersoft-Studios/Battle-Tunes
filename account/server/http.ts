@@ -1,5 +1,4 @@
-import { randomUUID } from "node:crypto";
-import { createReadStream, existsSync, statSync } from "node:fs";
+import { existsSync, readFileSync, statSync } from "node:fs";
 import {
 	createServer as createHttpServer,
 	type IncomingMessage,
@@ -8,11 +7,9 @@ import {
 } from "node:http";
 import path from "node:path";
 import { AppError } from "./app-error";
-import type { Logger } from "./logger";
 import { sendJson } from "./send-json";
 
 export type AppDeps = {
-	logger: Logger;
 	staticDir?: string;
 };
 
@@ -37,19 +34,10 @@ export function createServer(deps: AppDeps): Server {
 }
 
 function handleRequest(req: IncomingMessage, res: ServerResponse, deps: AppDeps): void {
-	const requestId = randomUUID();
-	const started = Date.now();
 	try {
 		const url = new URL(req.url ?? "/", "http://localhost");
 		if (url.pathname.startsWith("/api/")) {
 			sendJson(res, 404, { code: "NOT_FOUND", message: "Not found." });
-			deps.logger.info("[http.api] Done", {
-				requestId,
-				method: req.method,
-				path: url.pathname,
-				status: res.statusCode,
-				durationMs: Date.now() - started,
-			});
 			return;
 		}
 		if (req.method === "GET" || req.method === "HEAD") {
@@ -63,13 +51,7 @@ function handleRequest(req: IncomingMessage, res: ServerResponse, deps: AppDeps)
 			sendJson(res, error.status, { code: error.code, message: error.message });
 			return;
 		}
-		deps.logger.error("[http] Unhandled", {
-			requestId,
-			error:
-				error instanceof Error
-					? { message: error.message, stack: error.stack }
-					: { message: "unknown" },
-		});
+		console.error(error);
 		sendJson(res, 500, { code: "INTERNAL_ERROR", message: "Something went wrong." });
 	}
 }
@@ -93,14 +75,14 @@ function serveStatic(
 		if (!existsSync(fallback)) {
 			return false;
 		}
-		streamFile(req, res, fallback, ".html");
+		sendFile(req, res, fallback, ".html");
 		return true;
 	}
-	streamFile(req, res, resolved, path.extname(resolved));
+	sendFile(req, res, resolved, path.extname(resolved));
 	return true;
 }
 
-function streamFile(
+function sendFile(
 	req: IncomingMessage,
 	res: ServerResponse,
 	filePath: string,
@@ -112,5 +94,5 @@ function streamFile(
 		res.end();
 		return;
 	}
-	createReadStream(filePath).pipe(res);
+	res.end(readFileSync(filePath));
 }
