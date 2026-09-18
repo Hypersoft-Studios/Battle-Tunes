@@ -1,14 +1,6 @@
-import type { LogLevel } from "./logger.ts";
+import type { LogLevel } from "./logger";
 
 export type AppConfig = {
-	clerkSecretKey: string;
-	clerkPublishableKey: string;
-	stripeSecretKey: string;
-	stripePriceId: string;
-	resendApiKey: string;
-	resendFromAddress: string;
-	supportInboxEmail: string;
-	publicBaseUrl: string;
 	port: number;
 	logLevel: LogLevel;
 };
@@ -19,25 +11,9 @@ export type AppConfig = {
 export function loadConfig(env: NodeJS.ProcessEnv): AppConfig {
 	const logLevel = env.LOG_LEVEL;
 	return {
-		clerkSecretKey: required(env, "CLERK_SECRET_KEY"),
-		clerkPublishableKey: required(env, "CLERK_PUBLISHABLE_KEY"),
-		stripeSecretKey: required(env, "STRIPE_SECRET_KEY"),
-		stripePriceId: required(env, "STRIPE_PRICE_ID"),
-		resendApiKey: required(env, "RESEND_API_KEY"),
-		resendFromAddress: required(env, "RESEND_FROM_ADDRESS"),
-		supportInboxEmail: required(env, "SUPPORT_INBOX_EMAIL"),
-		publicBaseUrl: required(env, "PUBLIC_BASE_URL").replace(/\/$/, ""),
 		port: parsePort(env.PORT),
 		logLevel: isLogLevel(logLevel) ? logLevel : "info",
 	};
-}
-
-function required(env: NodeJS.ProcessEnv, name: string): string {
-	const value = env[name]?.trim();
-	if (!value) {
-		throw new Error(`Missing required environment variable ${name}.`);
-	}
-	return value;
 }
 
 function parsePort(value: string | undefined): number {

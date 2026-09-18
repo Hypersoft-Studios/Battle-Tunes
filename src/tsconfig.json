@@ -14,8 +14,7 @@
 		"verbatimModuleSyntax": true,
 		"skipLibCheck": true,
 		"noEmit": true,
-		"allowImportingTsExtensions": true,
 		"types": ["node"]
 	},
-	"include": ["client", "server", "test-setup.ts", "vitest.config.ts"]
+	"include": ["client", "server"]
 }

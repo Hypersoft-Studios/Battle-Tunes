@@ -42,11 +42,3 @@ export function createConsoleLogger(minLevel: LogLevel = "info"): Logger {
 		error: (message, context) => write("error", message, context),
 	};
 }
-
-/** Test logger that records nothing. */
-export const silentLogger: Logger = {
-	debug() {},
-	info() {},
-	warn() {},
-	error() {},
-};

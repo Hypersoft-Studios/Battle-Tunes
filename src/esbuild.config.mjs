@@ -13,12 +13,6 @@ const client = await esbuild.context({
 	minify: true,
 	sourcemap: true,
 	jsx: "automatic",
-	define: {
-		__CLERK_PUBLISHABLE_KEY__: JSON.stringify(process.env.CLERK_PUBLISHABLE_KEY ?? ""),
-		__BATTLE_TUNES_PUBLIC_URL__: JSON.stringify(
-			process.env.BATTLE_TUNES_PUBLIC_URL ?? "http://localhost:3001",
-		),
-	},
 });
 
 const server = await esbuild.context({
