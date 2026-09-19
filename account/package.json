@@ -1,0 +1,21 @@
+{
+  "name": "battle-tunes-account",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "node --watch dist/server/main.js",
+    "build": "tsc -p tsconfig.server.json && node esbuild.config.mjs",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "react": "19.3.0",
+    "react-dom": "19.3.0"
+  },
+  "devDependencies": {
+    "@types/node": "22.20.3",
+    "@types/react": "19.3.0",
+    "@types/react-dom": "19.3.0",
+    "esbuild": "0.28.2",
+    "typescript": "7.0.2"
+  }
+}
