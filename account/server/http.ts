@@ -1,4 +1,4 @@
-import { readFile, stat } from "node:fs/promises";
+import { readFile, stat as getFileStatus } from "node:fs/promises";
 import {
 	createServer as createHttpServer,
 	type IncomingMessage,
@@ -9,11 +9,11 @@ import path from "node:path";
 import { AppError } from "./app-error.js";
 import { sendJson } from "./send-json.js";
 
-export type AppDeps = {
-	staticDir?: string;
+export type AppDependencies = {
+	staticDirectory?: string;
 };
 
-const MIME_TYPES: Record<string, string> = {
+const CONTENT_TYPE_BY_EXTENSION: Record<string, string> = {
 	".css": "text/css; charset=utf-8",
 	".html": "text/html; charset=utf-8",
 	".js": "text/javascript; charset=utf-8",
@@ -24,84 +24,84 @@ const MIME_TYPES: Record<string, string> = {
 	".woff2": "font/woff2",
 };
 
-export const createServer = (deps: AppDeps): Server =>
-	createHttpServer((req, res) => {
-		void handleRequest(req, res, deps);
+export const createServer = (dependencies: AppDependencies): Server =>
+	createHttpServer((request, response) => {
+		void handleRequest(request, response, dependencies);
 	});
 
 const handleRequest = async (
-	req: IncomingMessage,
-	res: ServerResponse,
-	deps: AppDeps,
+	request: IncomingMessage,
+	response: ServerResponse,
+	dependencies: AppDependencies,
 ): Promise<void> => {
 	try {
-		const url = new URL(req.url ?? "/", "http://localhost");
-		if (url.pathname.startsWith("/api/")) {
-			sendJson(res, 404, { code: "NOT_FOUND", message: "Not found." });
+		const requestUrl = new URL(request.url ?? "/", "http://localhost");
+		if (requestUrl.pathname.startsWith("/api/")) {
+			sendJson(response, 404, { code: "NOT_FOUND", message: "Not found." });
 			return;
 		}
-		if (req.method === "GET" || req.method === "HEAD") {
-			if (await serveStatic(req, res, url.pathname, deps.staticDir)) {
+		if (request.method === "GET" || request.method === "HEAD") {
+			if (await serveStatic(request, response, requestUrl.pathname, dependencies.staticDirectory)) {
 				return;
 			}
 		}
-		sendJson(res, 404, { code: "NOT_FOUND", message: "Not found." });
+		sendJson(response, 404, { code: "NOT_FOUND", message: "Not found." });
 	} catch (error: unknown) {
 		if (error instanceof AppError) {
-			sendJson(res, error.status, { code: error.code, message: error.message });
+			sendJson(response, error.status, { code: error.code, message: error.message });
 			return;
 		}
 		console.error(error);
-		sendJson(res, 500, { code: "INTERNAL_ERROR", message: "Something went wrong." });
+		sendJson(response, 500, { code: "INTERNAL_ERROR", message: "Something went wrong." });
 	}
 };
 
 const serveStatic = async (
-	req: IncomingMessage,
-	res: ServerResponse,
+	request: IncomingMessage,
+	response: ServerResponse,
 	pathname: string,
-	staticDir: string | undefined,
+	staticDirectory: string | undefined,
 ): Promise<boolean> => {
-	if (!staticDir) {
+	if (!staticDirectory) {
 		return false;
 	}
-	const relative = pathname === "/" ? "/index.html" : pathname;
-	const resolved = path.resolve(staticDir, `.${relative}`);
-	if (!resolved.startsWith(path.resolve(staticDir))) {
+	const relativePath = pathname === "/" ? "/index.html" : pathname;
+	const resolvedPath = path.resolve(staticDirectory, `.${relativePath}`);
+	if (!resolvedPath.startsWith(path.resolve(staticDirectory))) {
 		return false;
 	}
-	const resolvedInfo = await statIfPresent(resolved);
-	if (!resolvedInfo?.isFile()) {
-		const fallback = path.resolve(staticDir, "index.html");
-		const fallbackInfo = await statIfPresent(fallback);
-		if (!fallbackInfo?.isFile()) {
+	const resolvedFileStatus = await fileStatusIfPresent(resolvedPath);
+	if (!resolvedFileStatus?.isFile()) {
+		const fallbackPath = path.resolve(staticDirectory, "index.html");
+		const fallbackFileStatus = await fileStatusIfPresent(fallbackPath);
+		if (!fallbackFileStatus?.isFile()) {
 			return false;
 		}
-		await sendFile(req, res, fallback, ".html");
+		await sendFile(request, response, fallbackPath, ".html");
 		return true;
 	}
-	await sendFile(req, res, resolved, path.extname(resolved));
+	await sendFile(request, response, resolvedPath, path.extname(resolvedPath));
 	return true;
 };
 
 const sendFile = async (
-	req: IncomingMessage,
-	res: ServerResponse,
+	request: IncomingMessage,
+	response: ServerResponse,
 	filePath: string,
-	ext: string,
+	extension: string,
 ): Promise<void> => {
-	const type = MIME_TYPES[ext] ?? "application/octet-stream";
-	res.writeHead(200, { "content-type": type });
-	if (req.method === "HEAD") {
-		res.end();
+	const contentType = CONTENT_TYPE_BY_EXTENSION[extension] ?? "application/octet-stream";
+	response.writeHead(200, { "content-type": contentType });
+	if (request.method === "HEAD") {
+		response.end();
 		return;
 	}
-	res.end(await readFile(filePath));
+	response.end(await readFile(filePath));
 };
 
-const statIfPresent = async (filePath: string) => {
+const fileStatusIfPresent = async (filePath: string) => {
 	try {
-		return await stat(filePath);
+		return await getFileStatus(filePath);
 	} catch (error: unknown) {
 		if (
 			typeof error === "object" &&

@@ -1,8 +1,8 @@
 import * as esbuild from "esbuild";
-import { cp, mkdir } from "node:fs/promises";
+import { cp as copyFile, mkdir as makeDirectory } from "node:fs/promises";
 
-await mkdir("dist/client", { recursive: true });
-await cp("client/index.html", "dist/client/index.html");
+await makeDirectory("dist/client", { recursive: true });
+await copyFile("client/index.html", "dist/client/index.html");
 
 await esbuild.build({
 	entryPoints: ["client/main.tsx"],
