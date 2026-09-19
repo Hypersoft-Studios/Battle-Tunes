@@ -1,4 +1,4 @@
-export function HomeView() {
+export const HomeView = () => {
 	return (
 		<div className="page">
 			<header className="site-header">

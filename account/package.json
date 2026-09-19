@@ -1,11 +1,10 @@
 {
-  "name": "battle-tunes-user-system",
+  "name": "battle-tunes-account",
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "node --watch dist/server/main.js",
-    "build": "node esbuild.config.mjs",
-    "build:watch": "node esbuild.config.mjs --watch",
+    "start": "node --watch dist/server/main.js",
+    "build": "tsc -p tsconfig.server.json && node esbuild.config.mjs",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {

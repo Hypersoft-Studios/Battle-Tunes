@@ -1,4 +1,4 @@
-import { existsSync, readFileSync, statSync } from "node:fs";
+import { readFile, stat } from "node:fs/promises";
 import {
 	createServer as createHttpServer,
 	type IncomingMessage,
@@ -6,8 +6,8 @@ import {
 	type ServerResponse,
 } from "node:http";
 import path from "node:path";
-import { AppError } from "./app-error";
-import { sendJson } from "./send-json";
+import { AppError } from "./app-error.js";
+import { sendJson } from "./send-json.js";
 
 export type AppDeps = {
 	staticDir?: string;
@@ -24,16 +24,16 @@ const MIME_TYPES: Record<string, string> = {
 	".woff2": "font/woff2",
 };
 
-/**
- * Tiny Node http server: static files for local/dev, JSON 404 for unknown routes.
- */
-export function createServer(deps: AppDeps): Server {
-	return createHttpServer((req, res) => {
-		handleRequest(req, res, deps);
+export const createServer = (deps: AppDeps): Server =>
+	createHttpServer((req, res) => {
+		void handleRequest(req, res, deps);
 	});
-}
 
-function handleRequest(req: IncomingMessage, res: ServerResponse, deps: AppDeps): void {
+const handleRequest = async (
+	req: IncomingMessage,
+	res: ServerResponse,
+	deps: AppDeps,
+): Promise<void> => {
 	try {
 		const url = new URL(req.url ?? "/", "http://localhost");
 		if (url.pathname.startsWith("/api/")) {
@@ -41,7 +41,7 @@ function handleRequest(req: IncomingMessage, res: ServerResponse, deps: AppDeps)
 			return;
 		}
 		if (req.method === "GET" || req.method === "HEAD") {
-			if (serveStatic(req, res, url.pathname, deps.staticDir)) {
+			if (await serveStatic(req, res, url.pathname, deps.staticDir)) {
 				return;
 			}
 		}
@@ -54,14 +54,14 @@ function handleRequest(req: IncomingMessage, res: ServerResponse, deps: AppDeps)
 		console.error(error);
 		sendJson(res, 500, { code: "INTERNAL_ERROR", message: "Something went wrong." });
 	}
-}
+};
 
-function serveStatic(
+const serveStatic = async (
 	req: IncomingMessage,
 	res: ServerResponse,
 	pathname: string,
 	staticDir: string | undefined,
-): boolean {
+): Promise<boolean> => {
 	if (!staticDir) {
 		return false;
 	}
@@ -70,29 +70,47 @@ function serveStatic(
 	if (!resolved.startsWith(path.resolve(staticDir))) {
 		return false;
 	}
-	if (!existsSync(resolved) || !statSync(resolved).isFile()) {
+	const resolvedInfo = await statIfPresent(resolved);
+	if (!resolvedInfo?.isFile()) {
 		const fallback = path.resolve(staticDir, "index.html");
-		if (!existsSync(fallback)) {
+		const fallbackInfo = await statIfPresent(fallback);
+		if (!fallbackInfo?.isFile()) {
 			return false;
 		}
-		sendFile(req, res, fallback, ".html");
+		await sendFile(req, res, fallback, ".html");
 		return true;
 	}
-	sendFile(req, res, resolved, path.extname(resolved));
+	await sendFile(req, res, resolved, path.extname(resolved));
 	return true;
-}
+};
 
-function sendFile(
+const sendFile = async (
 	req: IncomingMessage,
 	res: ServerResponse,
 	filePath: string,
 	ext: string,
-): void {
+): Promise<void> => {
 	const type = MIME_TYPES[ext] ?? "application/octet-stream";
 	res.writeHead(200, { "content-type": type });
 	if (req.method === "HEAD") {
 		res.end();
 		return;
 	}
-	res.end(readFileSync(filePath));
-}
+	res.end(await readFile(filePath));
+};
+
+const statIfPresent = async (filePath: string) => {
+	try {
+		return await stat(filePath);
+	} catch (error: unknown) {
+		if (
+			typeof error === "object" &&
+			error !== null &&
+			"code" in error &&
+			error.code === "ENOENT"
+		) {
+			return undefined;
+		}
+		throw error;
+	}
+};

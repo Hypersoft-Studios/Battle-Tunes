@@ -1,6 +1,3 @@
-/**
- * API error returned to clients as `{ code, message }` without stack traces.
- */
 export class AppError extends Error {
 	readonly code: string;
 	readonly status: number;
